@@ -1,0 +1,40 @@
+#!/bin/sh
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/bin:/sbin:/usr/bin:/usr/sbin
+export HOME=/root
+
+set -ex
+start(){
+	set -x
+	MMC=mmcblk2
+	MMCDEV=/dev/${MMC}
+
+	PARTS=$(eptdump $MMCDEV)
+	echo "$PARTS"
+
+	ENV_OFF=$(echo "$PARTS" | grep 'env' | cut  -f3)
+	ENV_SIZE=$(echo "$PARTS" | grep 'env' | cut  -f2)
+	BOOT_OFF=$(echo "$PARTS" | grep 'armbian_boot' | cut  -f3)
+	BOOT_SIZE=$(echo "$PARTS" | grep 'armbian_boot' | cut  -f2)
+	ROOT_OFF=$(echo "$PARTS" | grep 'armbian_rootfs' | cut  -f3)
+	ROOT_SIZE=$(echo "$PARTS" | grep 'armbian_rootfs' | cut  -f2)
+
+	TOTAL_SIZE=$(( $(cat /sys/class/block/${MMC}/size) * 512 ))
+
+	echo "$MMCDEV $ENV_OFF 0x10000 0x200" > /etc/fw_env.config
+
+	fw_setenv -s /aml_env
+
+	truncate -s $TOTAL_SIZE disk.tmp
+
+	parted -s "disk.tmp" mklabel msdos
+	parted -s "disk.tmp" mkpart primary fat32 ${BOOT_OFF}B $(( BOOT_OFF + BOOT_SIZE - 1))B
+	parted -s "disk.tmp" mkpart primary ext4 ${ROOT_OFF}B $((ROOT_OFF + ROOT_SIZE - 1))B
+	dd if=disk.tmp of=${MMCDEV} bs=1 seek=444 skip=444 count=68 conv=fsync oflag=direct
+	rm -f "disk.tmp"
+	partprobe $MMCDEV
+
+	echo "set part done" > /var/log/setpart
+}
+start 2>&1|tee -a /dev/tty1 | tee -a /dev/ttyAML0
+reboot
+

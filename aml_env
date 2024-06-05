@@ -1,0 +1,6 @@
+bootcmd run start_autoscript; run storeboot
+start_autoscript if mmcinfo; then run start_mmc_autoscript; fi; if usb start; then run start_usb_autoscript; fi; run start_emmc_autoscript
+start_emmc_autoscript if fatload mmc 1 1020000 emmc_autoscript; then autoscr 1020000; fi;
+start_mmc_autoscript if fatload mmc 0 1020000 s905_autoscript; then autoscr 1020000; fi;
+start_usb_autoscript for usbdev in 0 1 2 3; do if fatload usb ${usbdev} 1020000 s905_autoscript; then autoscr 1020000; fi; done
+upgrade_step 2

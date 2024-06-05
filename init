@@ -1,0 +1,19 @@
+#!/bin/sh
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/bin:/sbin:/usr/bin:/usr/sbin
+export HOME=/root
+
+mount -t devtmpfs devtmpfs /dev
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mkdir -p /dev/pts /dev/shm
+mount -t devpts    devpts  /dev/pts  -o mode=0620,gid=5,nosuid,noexec
+mount -t tmpfs     shm     /dev/shm  -o mode=1777,nosuid,nodev
+
+
+ip link set up dev lo
+
+cat /proc/mounts >> /dev/ttyAML0
+chown root:tty /dev/ttyAML*
+echo "12345"
+
+exec /sbin/init
