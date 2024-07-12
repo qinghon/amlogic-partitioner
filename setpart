@@ -12,7 +12,7 @@ resizefs(){
 	fi
 	case $fstype in
 	ext4)
-		e2fsck -f $part
+		e2fsck -fa $part
 		resize2fs $part
 	  ;;
 	btrfs)
