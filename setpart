@@ -3,6 +3,26 @@ export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/bin:/sbin:/usr/bin:/us
 export HOME=/root
 
 set -ex
+
+resizefs(){
+	fstype=$1
+	part=$2
+	if [ "$fstype"x == "ext4" ];then
+		resize2fs $part
+	fi
+	case $fstype in
+	ext4)
+		e2fsck -f $part
+		resize2fs $part
+	  ;;
+	btrfs)
+		mkdir -p /mnt
+		mount $part /mnt
+		btrfs filesystem resize max /mnt
+		umount /mnt
+	esac
+}
+
 start(){
 	set -x
 	MMC=mmcblk2
@@ -32,6 +52,9 @@ start(){
 	dd if=disk.tmp of=${MMCDEV} bs=1 seek=444 skip=444 count=68 conv=fsync oflag=direct
 	rm -f "disk.tmp"
 	partprobe $MMCDEV
+
+	fstype=$(blkid ${MMCDEV}p2 | grep -o 'TYPE=".*"' | awk -F'"' '{print $2}')
+	resizefs $fstype ${MMCDEV}p2
 
 	echo "set part done" > /var/log/setpart
 }
