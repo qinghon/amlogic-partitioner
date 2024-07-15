@@ -7,13 +7,16 @@ set -ex
 resizefs(){
 	fstype=$1
 	part=$2
-	if [ "$fstype"x == "ext4" ];then
-		resize2fs $part
-	fi
 	case $fstype in
 	ext4)
-		e2fsck -fa $part
-		resize2fs $part
+		e2fsck -fp $part
+		e2fsck -fy $part
+		e2fsck -f $part || true
+		resize2fs -f $part || true
+		e2fsck -fy $part
+		resize2fs -f $part || true
+		e2fsck -fp $part
+		e2fsck -fy $part
 	  ;;
 	btrfs)
 		mkdir -p /mnt
