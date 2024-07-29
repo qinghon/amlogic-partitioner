@@ -30,7 +30,7 @@ start(){
 	set -x
 	MMC=mmcblk2
 	MMCDEV=/dev/${MMC}
-
+	sleep 5
 	PARTS=$(eptdump $MMCDEV)
 	echo "$PARTS"
 
